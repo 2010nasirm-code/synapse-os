@@ -27,11 +27,7 @@ export interface AIRequest {
   /** Request context */
   context?: Partial<SystemContext>;
   /** Request metadata */
-  metadata?: {
-    timestamp: number;
-    source: 'chat' | 'command' | 'automation' | 'internal';
-    priority: 'low' | 'normal' | 'high' | 'critical';
-  };
+  metadata?: Record<string, unknown>;
   /** Conversation history for context */
   conversationHistory?: ConversationMessage[];
 }
@@ -68,7 +64,7 @@ export interface AIResponse {
 export interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  timestamp: number;
+  timestamp?: number;
   agentId?: AgentType;
 }
 
@@ -137,6 +133,8 @@ export interface AgentResult {
   processingTimeMs: number;
   /** Error message if failed */
   error?: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -170,53 +168,48 @@ export type ActionType =
 /**
  * Safety level for actions
  */
-export type ActionSafetyLevel = 
-  | 'safe'           // Auto-executable (read-only, UI highlights)
-  | 'low_risk'       // Requires soft confirmation
-  | 'medium_risk'    // Requires explicit confirmation
-  | 'high_risk'      // Requires explicit confirmation + reason
-  | 'dangerous';     // Blocked, PR draft only
+export type ActionSafetyLevel = 'low' | 'medium' | 'high';
 
 /**
- * Base action interface
+ * Action draft (proposed action)
  */
-export interface NexusAction {
+export interface ActionDraft {
   /** Unique action ID */
   id: string;
   /** Action type */
-  type: ActionType;
+  type: string;
+  /** Short title */
+  title: string;
   /** Human-readable description */
   description: string;
   /** Action payload */
   payload: Record<string, unknown>;
-  /** Safety classification */
-  safetyLevel: ActionSafetyLevel;
-  /** Whether action was confirmed */
-  confirmed: boolean;
-  /** When action was created */
-  createdAt: number;
-  /** Agent that created this */
-  createdBy: AgentType;
+  /** Source agent */
+  source: string;
+  /** Whether confirmation is required */
+  requiresConfirmation: boolean;
+  /** Safety level */
+  safetyLevel: 'low' | 'medium' | 'high';
   /** Preview of what will happen */
   preview?: string;
+  /** Estimated impact */
+  estimatedImpact?: string;
+  /** Whether action is reversible */
+  reversible?: boolean;
+  /** When action was created */
+  createdAt: number;
 }
 
 /**
- * Action draft (not yet confirmed)
+ * Confirmed action
  */
-export interface ActionDraft extends NexusAction {
-  /** Draft status */
-  status: 'pending' | 'confirmed' | 'rejected' | 'expired';
-  /** Expiration timestamp */
-  expiresAt: number;
-  /** Confirmation token (required to execute) */
-  confirmationToken?: string;
-  /** Why this action was proposed */
-  rationale: string;
-  /** Potential side effects */
-  sideEffects?: string[];
-  /** Undo strategy if applicable */
-  undoStrategy?: string;
+export interface NexusAction extends ActionDraft {
+  /** User who confirmed */
+  confirmedBy: string;
+  /** When confirmed */
+  confirmedAt: number;
+  /** Execution status */
+  status: 'pending' | 'confirmed' | 'completed' | 'failed';
 }
 
 /**
@@ -242,7 +235,7 @@ export interface ActionConfirmation {
 /**
  * Insight severity/importance level
  */
-export type InsightLevel = 'info' | 'suggestion' | 'warning' | 'critical' | 'opportunity';
+export type InsightLevel = 'info' | 'success' | 'warning' | 'critical';
 
 /**
  * Insight category
@@ -263,30 +256,26 @@ export type InsightCategory =
 export interface Insight {
   /** Unique insight ID */
   id: string;
+  /** Insight type */
+  type: string;
   /** Insight title */
   title: string;
   /** Detailed description */
   description: string;
   /** Importance level */
   level: InsightLevel;
-  /** Category */
-  category: InsightCategory;
   /** Confidence score 0-1 */
   confidence: number;
-  /** Related data references */
-  dataReferences?: string[];
-  /** Suggested actions */
-  suggestedActions?: ActionDraft[];
-  /** When insight was generated */
-  generatedAt: number;
-  /** Agent that generated this */
-  generatedBy: AgentType;
-  /** Expiration (if time-sensitive) */
-  expiresAt?: number;
-  /** Whether user has seen this */
-  seen: boolean;
-  /** Whether user dismissed this */
-  dismissed: boolean;
+  /** Source agent */
+  source: string;
+  /** Timestamp */
+  timestamp: number;
+  /** Related data */
+  data?: Record<string, unknown>;
+  /** Suggestions */
+  suggestions?: string[];
+  /** Related item IDs */
+  relatedItems?: string[];
 }
 
 // ============================================================================
@@ -297,13 +286,13 @@ export interface Insight {
  * Memory item category
  */
 export type MemoryCategory = 
-  | 'conversation'
+  | 'general'
   | 'preference'
   | 'fact'
-  | 'pattern'
-  | 'instruction'
-  | 'context'
-  | 'summary';
+  | 'conversation'
+  | 'task'
+  | 'insight'
+  | 'automation';
 
 /**
  * Memory item stored in the system
@@ -312,7 +301,7 @@ export interface NexusMemoryItem {
   /** Unique memory ID */
   id: string;
   /** Memory category */
-  category: MemoryCategory;
+  category?: MemoryCategory;
   /** Content text */
   content: string;
   /** Content summary */
@@ -327,12 +316,8 @@ export interface NexusMemoryItem {
   lastAccessedAt: number;
   /** Access count */
   accessCount: number;
-  /** TTL in ms (0 = permanent) */
-  ttl: number;
-  /** Related memory IDs */
-  relatedIds?: string[];
-  /** Source of this memory */
-  source: 'user' | 'system' | 'agent' | 'inferred';
+  /** Tags */
+  tags?: string[];
   /** Custom metadata */
   metadata?: Record<string, unknown>;
 }
@@ -341,14 +326,16 @@ export interface NexusMemoryItem {
  * Embedding vector
  */
 export interface EmbeddingVector {
-  /** Vector dimensions */
-  dimensions: number;
   /** Vector values */
   values: number[];
+  /** Vector dimensions */
+  dimensions: number;
   /** Model used to generate */
   model: string;
-  /** Generation timestamp */
-  generatedAt: number;
+  /** Created at timestamp */
+  createdAt?: number;
+  /** Source text snippet */
+  source?: string;
 }
 
 /**
@@ -485,23 +472,21 @@ export interface AutomationBlueprint {
   description: string;
   /** Trigger configuration */
   trigger: {
-    type: AutomationTrigger;
+    type: string;
     config: Record<string, unknown>;
+    description: string;
   };
-  /** Conditions to check */
-  conditions: AutomationCondition[];
   /** Actions to execute */
-  actions: AutomationAction[];
+  actions: Array<{
+    type: string;
+    config: Record<string, unknown>;
+    description: string;
+    order: number;
+  }>;
   /** Whether automation is active */
-  active: boolean;
-  /** Created by */
-  createdBy: string;
+  enabled: boolean;
   /** Created at */
   createdAt: number;
-  /** Last run */
-  lastRunAt?: number;
-  /** Run count */
-  runCount: number;
 }
 
 /**
@@ -543,27 +528,19 @@ export interface PatchSuggestion {
   /** Unique patch ID */
   id: string;
   /** File path */
-  filePath: string;
-  /** Patch type */
-  type: 'create' | 'modify' | 'delete';
-  /** Original content (for modify) */
-  originalContent?: string;
-  /** New content */
-  newContent: string;
+  file: string;
   /** Patch description */
   description: string;
-  /** Why this patch is suggested */
-  rationale: string;
-  /** Confidence score */
-  confidence: number;
-  /** PR draft status */
-  prDraftStatus: 'pending' | 'created' | 'merged' | 'rejected';
-  /** Associated PR URL */
-  prUrl?: string;
-  /** Created by */
-  createdBy: AgentType;
-  /** Created at */
-  createdAt: number;
+  /** Original content */
+  before: string;
+  /** New content */
+  after: string;
+  /** Start line */
+  lineStart: number;
+  /** End line */
+  lineEnd: number;
+  /** Reason for patch */
+  reason: string;
 }
 
 // ============================================================================

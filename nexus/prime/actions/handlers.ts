@@ -132,8 +132,8 @@ export async function handleLog(action: ActionDraft): Promise<HandlerResult> {
   try {
     const logEntry = {
       id: `log-${Date.now()}`,
-      message: action.payload.message || action.description,
-      level: action.payload.level || 'info',
+      message: String(action.payload.message || action.description),
+      level: String(action.payload.level || 'info'),
       data: action.payload.data,
       timestamp: Date.now(),
     };
@@ -166,8 +166,8 @@ export async function handleCreate(action: ActionDraft): Promise<HandlerResult> 
   const prov = createProvenance('action', 'handler', 'create');
   
   try {
-    const entityType = action.payload.type || action.payload.entityType;
-    const config = action.payload.config || action.payload.data;
+    const entityType = String(action.payload.type || action.payload.entityType || 'item');
+    const config = (action.payload.config || action.payload.data || {}) as Record<string, unknown>;
 
     // Validate entity type
     const allowedTypes = ['tracker', 'dashboard', 'layout', 'automation', 'item'];
@@ -210,8 +210,8 @@ export async function handleUpdate(action: ActionDraft): Promise<HandlerResult> 
   const prov = createProvenance('action', 'handler', 'update');
   
   try {
-    const targetId = action.payload.id || action.payload.targetId;
-    const updates = action.payload.updates || action.payload.data;
+    const targetId = String(action.payload.id || action.payload.targetId || '');
+    const updates = (action.payload.updates || action.payload.data || {}) as Record<string, unknown>;
 
     if (!targetId) {
       throw new Error('No target ID specified for update');
@@ -291,11 +291,11 @@ export async function handleAutomation(action: ActionDraft): Promise<HandlerResu
   const prov = createProvenance('action', 'handler', 'automation');
   
   try {
-    const blueprint = action.payload.blueprint || action.payload;
+    const blueprint = (action.payload.blueprint || action.payload) as Record<string, unknown>;
 
     // Create automation (placeholder)
     const automation = {
-      id: blueprint.id || `auto-${Date.now()}`,
+      id: String(blueprint.id || `auto-${Date.now()}`),
       name: blueprint.name,
       trigger: blueprint.trigger,
       actions: blueprint.actions,
@@ -331,7 +331,7 @@ export async function handleDelete(action: ActionDraft): Promise<HandlerResult> 
   
   try {
     const targetId = action.payload.id || action.payload.targetId;
-    const targetIds = action.payload.ids || (targetId ? [targetId] : []);
+    const targetIds = (action.payload.ids || (targetId ? [targetId] : [])) as string[];
 
     if (targetIds.length === 0) {
       throw new Error('No target ID(s) specified for deletion');

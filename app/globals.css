@@ -350,3 +350,125 @@ button, a {
 .rounded-dynamic {
   border-radius: var(--theme-radius);
 }
+
+/* ============================================================================
+   SIMPLE MODE STYLES
+   ============================================================================ */
+
+/* Simple mode - cleaner, more minimal */
+[data-mode="simple"] {
+  --theme-radius: 16px;
+  --theme-blur: 8px;
+}
+
+[data-mode="simple"] .advanced-feature {
+  display: none !important;
+}
+
+[data-mode="simple"] .simplified {
+  display: flex !important;
+}
+
+/* Pro mode - full features */
+[data-mode="pro"] .simplified {
+  display: none !important;
+}
+
+[data-mode="pro"] .advanced-feature {
+  display: flex !important;
+}
+
+/* Welcome animation */
+@keyframes welcome-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.welcome-bounce {
+  animation: welcome-bounce 2s ease-in-out infinite;
+}
+
+/* Helpful pulse */
+@keyframes helpful-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+}
+
+.helpful-pulse {
+  animation: helpful-pulse 2s ease-in-out infinite;
+}
+
+/* Friendly hover */
+.friendly-hover {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.friendly-hover:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* Ultra clean card */
+.ultra-clean-card {
+  @apply bg-card/80 backdrop-blur-xl rounded-2xl border border-border/30;
+  @apply shadow-sm hover:shadow-lg transition-all duration-300;
+}
+
+/* Soft button */
+.soft-button {
+  @apply px-4 py-2.5 rounded-xl font-medium transition-all duration-200;
+  @apply hover:scale-105 active:scale-95;
+}
+
+/* Gentle input */
+.gentle-input {
+  @apply w-full px-4 py-3 rounded-xl border border-border/50;
+  @apply bg-background/50 backdrop-blur-sm;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50;
+  @apply placeholder:text-muted-foreground/60;
+  transition: all 0.2s ease;
+}
+
+.gentle-input:hover {
+  @apply border-border;
+}
+
+/* Friendly tooltip */
+.friendly-tooltip {
+  @apply absolute z-50 px-3 py-2 rounded-lg text-sm;
+  @apply bg-popover text-popover-foreground shadow-xl border;
+  @apply animate-in fade-in-0 zoom-in-95 duration-200;
+}
+
+/* Progress indicator */
+.progress-friendly {
+  @apply h-2 rounded-full bg-muted overflow-hidden;
+}
+
+.progress-friendly-bar {
+  @apply h-full rounded-full transition-all duration-500;
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+}
+
+/* Emoji badge */
+.emoji-badge {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm;
+  @apply bg-muted/50 font-medium;
+}
+
+/* Step indicator */
+.step-indicator {
+  @apply flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold;
+  @apply transition-all duration-300;
+}
+
+.step-indicator.active {
+  @apply bg-primary text-primary-foreground scale-110;
+}
+
+.step-indicator.completed {
+  @apply bg-primary/20 text-primary;
+}
+
+.step-indicator.pending {
+  @apply bg-muted text-muted-foreground;
+}

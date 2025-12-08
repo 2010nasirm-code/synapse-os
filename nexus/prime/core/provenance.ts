@@ -250,10 +250,10 @@ export class ProvenanceBuilder {
  */
 export function createProvenance(
   requestId: string,
-  agentId: AgentType,
+  agentId: string,
   operation: string
 ): ProvenanceBuilder {
-  return new ProvenanceBuilder(requestId, agentId, operation);
+  return new ProvenanceBuilder(requestId, agentId as AgentType, operation);
 }
 
 /**

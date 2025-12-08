@@ -39,12 +39,10 @@ export {
 
 // Safety
 export {
-  SafetyFilter,
-  ActionSafetyCheck,
-  ContentSanitizer,
+  SafetyValidator,
   filterUnsafeActions,
-  checkActionSafety,
-  sanitizeContent,
+  sanitizeUserInput,
+  sanitizeOutput,
 } from './safety';
 
 // Rate Limiting
@@ -52,21 +50,20 @@ export {
   RateLimiter,
   isRequestAllowed,
   recordRequest,
-  getRateLimitStatus,
+  getRateLimitHeaders,
 } from './rateLimit';
 
 // Provenance
 export {
-  ProvenanceManager,
+  ProvenanceBuilder,
   createProvenance,
   getProvenanceChain,
+  getRequestProvenance,
 } from './provenance';
 
 // Validation
 export {
   Validator,
-  validateAIRequest,
-  validateActionDraft,
-  validateInsight,
+  isValidAIRequest,
+  isValidActionDraft,
 } from './validator';
-

@@ -13,7 +13,7 @@
  */
 
 import { ActionDraft, NexusAction } from '../core/types';
-import { getActionConfig, ACTION_TYPES } from './actionTypes';
+import { getActionConfig } from './actionTypes';
 
 // ============================================================================
 // CONFIRMATION TOKEN
@@ -132,32 +132,33 @@ export function generatePreview(action: ActionDraft): ActionPreview {
   const warnings: string[] = [];
 
   // Generate changes based on action type
-  switch (action.type) {
-    case ACTION_TYPES.CREATE:
+  const actionType = action.type as string;
+  switch (actionType) {
+    case 'create':
       changes.push({
         type: 'create',
-        target: action.payload.type || action.payload.entityType || 'item',
+        target: String(action.payload.type || action.payload.entityType || 'item'),
         after: action.payload.config || action.payload.data,
-        description: `Create new ${action.payload.type || 'item'}`,
+        description: `Create new ${String(action.payload.type || 'item')}`,
       });
       break;
 
-    case ACTION_TYPES.UPDATE:
+    case 'update':
       changes.push({
         type: 'update',
-        target: action.payload.id || action.payload.targetId,
+        target: String(action.payload.id || action.payload.targetId || 'item'),
         before: '(current values)',
         after: action.payload.updates || action.payload.data,
         description: `Update existing item`,
       });
       break;
 
-    case ACTION_TYPES.DELETE:
-      const ids = action.payload.ids || [action.payload.id];
-      for (const id of ids) {
+    case 'delete':
+      const deleteIds = (action.payload.ids || [action.payload.id]) as string[];
+      for (const id of deleteIds) {
         changes.push({
           type: 'delete',
-          target: id,
+          target: String(id),
           before: '(will be deleted)',
           description: `Delete item ${id}`,
         });
@@ -165,21 +166,23 @@ export function generatePreview(action: ActionDraft): ActionPreview {
       warnings.push('This action cannot be undone.');
       break;
 
-    case ACTION_TYPES.PATCH:
-      const patches = action.payload.patches || [action.payload.patch];
-      for (const patch of patches) {
-        changes.push({
-          type: 'modify',
-          target: patch.file || 'code',
-          before: patch.before,
-          after: patch.after,
-          description: patch.description || 'Apply code change',
-        });
+    case 'patch':
+      const patchList = (action.payload.patches || [action.payload.patch]) as any[];
+      for (const patch of patchList) {
+        if (patch) {
+          changes.push({
+            type: 'modify',
+            target: String(patch.file || 'code'),
+            before: patch.before,
+            after: patch.after,
+            description: String(patch.description || 'Apply code change'),
+          });
+        }
       }
       warnings.push('Code changes will be proposed as a PR draft.');
       break;
 
-    case ACTION_TYPES.AUTOMATION:
+    case 'automation':
       changes.push({
         type: 'create',
         target: 'automation',
@@ -189,9 +192,9 @@ export function generatePreview(action: ActionDraft): ActionPreview {
       warnings.push('Automation will be created in disabled state.');
       break;
 
-    case ACTION_TYPES.MODIFY_SETTINGS:
-      const settings = action.payload.settings || action.payload;
-      for (const [key, value] of Object.entries(settings)) {
+    case 'modify_settings':
+      const settingsObj = (action.payload.settings || action.payload) as Record<string, unknown>;
+      for (const [key, value] of Object.entries(settingsObj)) {
         changes.push({
           type: 'modify',
           target: `settings.${key}`,

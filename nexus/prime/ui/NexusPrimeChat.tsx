@@ -312,8 +312,8 @@ function ProvenanceView({ provenance }: { provenance: ProvenanceRecord[] }) {
           <span>{p.agentId}</span>
           <span>→</span>
           <span>{p.operation}</span>
-          <span className={p.status === 'success' ? 'text-green-600' : 'text-destructive'}>
-            ({p.status})
+          <span className={p.success ? 'text-green-600' : 'text-destructive'}>
+            ({p.success ? 'success' : 'failed'})
           </span>
         </div>
       ))}

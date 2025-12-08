@@ -22,8 +22,9 @@ export { AutomationAgent } from './AutomationAgent';
 export { MemoryAgent } from './MemoryAgent';
 export { EvolutionAgent } from './EvolutionAgent';
 
-// Re-export registry interface
+// Re-export registry interface and functions
 export type { INexusAgent } from '../core/registry';
+export { getRegistry, registerAgent, getAgent, getAgentConfig } from '../core/registry';
 
 // Agent initialization helper
 import { registerAgent, getRegistry } from '../core/registry';

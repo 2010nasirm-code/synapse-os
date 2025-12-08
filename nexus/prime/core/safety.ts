@@ -27,35 +27,24 @@ import {
 /**
  * Action safety classifications
  */
-const ACTION_SAFETY_MAP: Record<ActionType, ActionSafetyLevel> = {
-  // Safe actions (auto-executable)
-  navigate_ui: 'safe',
-  highlight_ui: 'safe',
-  create_suggestion: 'safe',
+const ACTION_SAFETY_MAP: Record<string, ActionSafetyLevel> = {
+  // Low risk (auto-executable)
+  navigate: 'low',
+  highlight: 'low',
+  suggest: 'low',
+  log: 'low',
   
-  // Low risk (soft confirmation)
-  create_insight: 'low_risk',
-  store_memory: 'low_risk',
+  // Medium risk (confirmation preferred)
+  create: 'medium',
+  update: 'medium',
+  store: 'medium',
+  automation: 'medium',
   
-  // Medium risk (explicit confirmation)
-  create_tracker: 'medium_risk',
-  update_tracker: 'medium_risk',
-  create_item: 'medium_risk',
-  update_item: 'medium_risk',
-  create_automation: 'medium_risk',
-  update_automation: 'medium_risk',
-  update_dashboard: 'medium_risk',
-  create_layout: 'medium_risk',
-  send_notification: 'medium_risk',
-  
-  // High risk (explicit confirmation + reason)
-  delete_tracker: 'high_risk',
-  delete_item: 'high_risk',
-  delete_automation: 'high_risk',
-  delete_memory: 'high_risk',
-  
-  // Dangerous (blocked, PR draft only)
-  apply_patch: 'dangerous',
+  // High risk (confirmation required)
+  delete: 'high',
+  patch: 'high',
+  execute: 'high',
+  modify_settings: 'high',
 };
 
 /**
@@ -98,21 +87,22 @@ export class SafetyValidator {
    * Check if action can auto-execute
    */
   static canAutoExecute(action: NexusAction | ActionDraft): boolean {
-    return action.safetyLevel === 'safe';
+    return action.safetyLevel === 'low';
   }
 
   /**
    * Check if action requires confirmation
    */
   static requiresConfirmation(action: NexusAction | ActionDraft): boolean {
-    return action.safetyLevel !== 'safe';
+    return action.safetyLevel !== 'low';
   }
 
   /**
    * Check if action is blocked (PR draft only)
    */
   static isBlocked(action: NexusAction | ActionDraft): boolean {
-    return action.safetyLevel === 'dangerous';
+    // High safety level actions are blocked without explicit confirmation
+    return action.safetyLevel === 'high' && action.requiresConfirmation;
   }
 
   /**
@@ -131,9 +121,6 @@ export class SafetyValidator {
     }
     if (!action.description) {
       errors.push({ field: 'description', code: 'REQUIRED', message: 'Description is required' });
-    }
-    if (!action.rationale) {
-      errors.push({ field: 'rationale', code: 'REQUIRED', message: 'Rationale is required' });
     }
 
     // Check payload size
@@ -157,13 +144,13 @@ export class SafetyValidator {
     }
 
     // Warn about high-risk actions
-    if (action.safetyLevel === 'high_risk') {
-      warnings.push('This is a high-risk action that requires explicit confirmation with reason');
+    if (action.safetyLevel === 'high') {
+      warnings.push('This is a high-risk action that requires explicit confirmation');
     }
 
-    // Block dangerous actions
-    if (action.safetyLevel === 'dangerous') {
-      warnings.push('This action is blocked for direct execution. A PR draft will be created instead.');
+    // Block certain high-risk actions
+    if (action.safetyLevel === 'high' && action.type === 'patch') {
+      warnings.push('This action requires careful review before execution.');
     }
 
     return {
@@ -280,25 +267,16 @@ export class SafetyValidator {
     let blockedReason: string | undefined;
 
     switch (action.safetyLevel) {
-      case 'safe':
+      case 'low':
         confirmationType = 'none';
         break;
-      case 'low_risk':
-        confirmationType = 'soft';
-        warnings.push('This action will modify data');
-        break;
-      case 'medium_risk':
+      case 'medium':
         confirmationType = 'explicit';
-        warnings.push('Please review this action carefully before confirming');
+        warnings.push('Please review this action before confirming');
         break;
-      case 'high_risk':
+      case 'high':
         confirmationType = 'explicit_with_reason';
-        warnings.push('This is a high-risk action. Please provide a reason for confirmation.');
-        break;
-      case 'dangerous':
-        confirmationType = 'explicit_with_reason';
-        blockedReason = 'Direct execution blocked. This action will create a PR draft for human review.';
-        warnings.push(blockedReason);
+        warnings.push('This is a high-risk action. Please review carefully.');
         break;
     }
 
@@ -344,27 +322,25 @@ export function filterUnsafeActions(actions: ActionDraft[]): {
  * Create a safe action draft
  */
 export function createSafeActionDraft(
-  type: ActionType,
+  type: string,
+  title: string,
   description: string,
   payload: Record<string, unknown>,
-  rationale: string,
-  createdBy: AgentType
+  source: string
 ): ActionDraft {
-  const safetyLevel = SafetyValidator.getActionSafetyLevel(type);
+  const safetyLevel = SafetyValidator.getActionSafetyLevel(type as ActionType);
   const now = Date.now();
   
   return {
     id: `action-${now}-${Math.random().toString(36).slice(2)}`,
     type,
+    title,
     description,
     payload,
+    source,
     safetyLevel,
-    confirmed: false,
+    requiresConfirmation: safetyLevel !== 'low',
     createdAt: now,
-    createdBy,
-    status: 'pending',
-    expiresAt: now + 24 * 60 * 60 * 1000, // 24 hours
-    rationale,
   };
 }
 

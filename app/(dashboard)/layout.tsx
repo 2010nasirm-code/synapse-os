@@ -43,6 +43,9 @@ import { AIPanel } from "@/components/ai-assistant/ai-panel";
 import { ThemePanel } from "@/components/theme-panel/theme-panel";
 import { DiagnosticsPanel } from "@/components/diagnostics/diagnostics-panel";
 import { useNexus } from "@/hooks/use-nexus-features";
+import { ModeToggle, useMode } from "@/components/ux/ModeToggle";
+import { OnboardingWizard } from "@/components/ux/OnboardingWizard";
+import { HelpPanel } from "@/components/ux/HelpPanel";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -84,10 +87,21 @@ export default function DashboardLayout({
   
   // Nexus features
   const { systemHealth, adaptiveComplexity } = useNexus();
+  
+  // UX mode and onboarding
+  const { isSimple, isPro } = useMode();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     logger.info("ui", "Dashboard layout mounted");
+    
+    // Check if onboarding is needed
+    const hasCompletedOnboarding = localStorage.getItem('nexus-onboarding-complete');
+    if (!hasCompletedOnboarding) {
+      setShowOnboarding(true);
+    }
     
     // Listen for custom events
     const handleThemePanel = () => setIsThemePanelOpen(true);
@@ -162,8 +176,27 @@ export default function DashboardLayout({
     return null;
   }
 
+  // Get context-aware help tips
+  const currentPage = pathname.split('/').pop() || 'dashboard';
+  const helpTips = [
+    { id: 'tip-1', tip: 'Click + to add a new item', action: 'create', priority: 'high' as const },
+    { id: 'tip-2', tip: 'Use the AI assistant for quick help', action: 'ai', priority: 'medium' as const },
+    { id: 'tip-3', tip: 'Check Analytics to see your progress', priority: 'low' as const },
+  ];
+
   return (
     <div className="min-h-screen flex bg-background">
+      {/* Onboarding Wizard */}
+      {showOnboarding && (
+        <OnboardingWizard
+          onComplete={() => setShowOnboarding(false)}
+          onSkip={() => {
+            localStorage.setItem('nexus-onboarding-complete', 'true');
+            setShowOnboarding(false);
+          }}
+        />
+      )}
+      
       {/* Command Palette */}
       <CommandPalette isOpen={commandPalette.isOpen} onClose={commandPalette.close} />
       
@@ -175,6 +208,17 @@ export default function DashboardLayout({
       
       {/* Diagnostics Panel */}
       <DiagnosticsPanel isOpen={isDiagnosticsOpen} onClose={() => setIsDiagnosticsOpen(false)} />
+      
+      {/* Help Panel (only in simple mode) */}
+      {isSimple && (
+        <HelpPanel
+          context={currentPage}
+          tips={helpTips}
+          onAction={(action) => {
+            if (action === 'ai') setIsAIPanelOpen(true);
+          }}
+        />
+      )}
 
       {/* Desktop Sidebar */}
       <motion.aside
@@ -302,11 +346,15 @@ export default function DashboardLayout({
           </button>
         </div>
 
-        {/* User Level Badge */}
+        {/* Mode Toggle & User Level */}
         <div className={cn(
-          "p-4 border-t border-border/50",
-          !isSidebarOpen && "flex justify-center"
+          "p-4 border-t border-border/50 space-y-3",
+          !isSidebarOpen && "flex flex-col items-center"
         )}>
+          {/* Mode Toggle */}
+          <ModeToggle showLabel={isSidebarOpen} size={isSidebarOpen ? "md" : "sm"} />
+          
+          {/* User Level Badge */}
           <div className={cn(
             "px-3 py-1.5 rounded-full text-xs font-medium text-center",
             adaptiveComplexity.profile?.level === 'beginner' && "bg-blue-500/10 text-blue-500",
