@@ -1,76 +1,86 @@
+/**
+ * ============================================================================
+ * NEXUS PRIME - API Route
+ * ============================================================================
+ * 
+ * Main API endpoint for NEXUS PRIME system.
+ * POST /api/prime
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
+import { handleNexusPrimeRequest } from '@/nexus/prime/api';
+import { initializeAgents } from '@/nexus/prime/agents';
 
-// ============================================================================
-// NEXUS PRIME - API ROUTE
-// Server-side API for Nexus Prime operations
-// ============================================================================
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const action = searchParams.get('action');
-
-  switch (action) {
-    case 'status':
-      return NextResponse.json({
-        version: '1.0.0',
-        status: 'running',
-        timestamp: new Date().toISOString(),
-      });
-
-    case 'health':
-      return NextResponse.json({
-        healthy: true,
-        score: 100,
-        issues: [],
-      });
-
-    default:
-      return NextResponse.json({
-        message: 'Nexus Prime API',
-        version: '1.0.0',
-        endpoints: [
-          'GET ?action=status',
-          'GET ?action=health',
-          'POST - Run diagnostics',
-        ],
-      });
-  }
-}
+// Initialize agents on first request
+let initialized = false;
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { action, data } = body;
-
-    switch (action) {
-      case 'diagnostics':
-        // Run server-side diagnostics
-        return NextResponse.json({
-          success: true,
-          timestamp: new Date().toISOString(),
-          results: {
-            serverStatus: 'healthy',
-            memoryUsage: process.memoryUsage(),
-            uptime: process.uptime(),
-          },
-        });
-
-      case 'log':
-        // Log event (for debugging)
-        console.log('[Nexus Prime]', data);
-        return NextResponse.json({ success: true });
-
-      default:
-        return NextResponse.json(
-          { error: 'Unknown action' },
-          { status: 400 }
-        );
+    // Initialize agents (idempotent)
+    if (!initialized) {
+      initializeAgents();
+      initialized = true;
     }
+
+    // Parse request body
+    const body = await request.json();
+
+    // Validate required fields
+    if (!body.prompt || typeof body.prompt !== 'string') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing or invalid prompt',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Get user ID from body or default
+    const userId = body.userId || 'anonymous';
+
+    // Handle the request
+    const response = await handleNexusPrimeRequest({
+      prompt: body.prompt,
+      userId,
+      targetAgent: body.targetAgent,
+      context: body.context,
+      conversationHistory: body.conversationHistory,
+      options: body.options,
+    });
+
+    return NextResponse.json(response);
+
   } catch (error) {
+    console.error('[API /prime] Error:', error);
+
     return NextResponse.json(
-      { error: 'Invalid request' },
-      { status: 400 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error',
+        requestId: '',
+        answer: '',
+        insights: [],
+        actionDrafts: [],
+        agentsUsed: [],
+        provenance: [],
+        confidence: 0,
+        processingTime: 0,
+      },
+      { status: 500 }
     );
   }
 }
 
+export async function GET() {
+  return NextResponse.json({
+    name: 'NEXUS PRIME API',
+    version: '1.0.0',
+    status: 'operational',
+    endpoints: {
+      'POST /api/prime': 'Main NEXUS PRIME endpoint',
+      'POST /api/prime/agent': 'Run specific agent',
+      'POST /api/prime/action': 'Apply action',
+    },
+  });
+}
