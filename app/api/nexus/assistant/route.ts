@@ -1,37 +1,39 @@
 /**
  * ============================================================================
- * NEXUS ASSISTANT V3 - AGENT RUN API ROUTE
+ * NEXUS ASSISTANT V3 - API ROUTE
  * ============================================================================
  * 
- * POST /api/nexus/agent
+ * POST /api/nexus/assistant
  * 
  * @version 3.0.0
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { handleAgentRun, listAgents } from '@/nexus/assistant-v3/api';
+import { handleAssistantRequest } from '@/nexus/assistant-v3/api';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const response = await handleAgentRun({
-      agentId: body.agentId,
+    const response = await handleAssistantRequest({
       query: body.query,
       userId: body.userId,
       sessionId: body.sessionId,
-      context: body.context,
+      persona: body.persona,
+      uiContext: body.uiContext,
+      options: body.options,
     });
 
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('[API /nexus/agent] Error:', error);
+    console.error('[API /nexus/assistant] Error:', error);
     
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Internal error',
+        messages: [],
       },
       { status: 500 }
     );
@@ -39,10 +41,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const agents = listAgents();
-  
   return NextResponse.json({
-    agents,
-    count: agents.length,
+    name: 'Nexus Assistant V3 API',
+    version: '3.0.0',
+    endpoints: {
+      'POST /api/nexus/assistant': 'Main chat endpoint',
+      'POST /api/nexus/agent': 'Run specific agent',
+      'POST /api/nexus/action': 'Apply confirmed action',
+    },
   });
 }
+
