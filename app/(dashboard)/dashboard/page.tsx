@@ -8,7 +8,10 @@ import {
   Workflow, 
   TrendingUp,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Database,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -22,29 +25,78 @@ export default function DashboardPage() {
     completed: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const supabase = getSupabaseClient();
 
   useEffect(() => {
-    async function fetchStats() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const [items, suggestions, automations] = await Promise.all([
-        supabase.from("items").select("id, status").eq("user_id", user.id),
-        supabase.from("suggestions").select("id").eq("user_id", user.id),
-        supabase.from("automations").select("id").eq("user_id", user.id),
-      ]);
-
-      setStats({
-        items: items.data?.length || 0,
-        suggestions: suggestions.data?.length || 0,
-        automations: automations.data?.length || 0,
-        completed: items.data?.filter(i => i.status === "completed").length || 0,
-      });
-      setLoading(false);
-    }
     fetchStats();
+    
+    // Real-time subscription
+    const channel = supabase.channel('dashboard')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'suggestions' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'automations' }, fetchStats)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [supabase]);
+
+  async function fetchStats() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const [items, suggestions, automations] = await Promise.all([
+      supabase.from("items").select("id, status").eq("user_id", user.id),
+      supabase.from("suggestions").select("id").eq("user_id", user.id),
+      supabase.from("automations").select("id").eq("user_id", user.id),
+    ]);
+
+    setStats({
+      items: items.data?.length || 0,
+      suggestions: suggestions.data?.length || 0,
+      automations: automations.data?.length || 0,
+      completed: items.data?.filter(i => i.status === "completed").length || 0,
+    });
+    setLoading(false);
+  }
+
+  async function generateSampleData() {
+    setGenerating(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Sample items
+    const sampleItems = [
+      { name: "Complete project proposal", priority: "high", status: "in_progress", category: "Work" },
+      { name: "Review team feedback", priority: "medium", status: "pending", category: "Work" },
+      { name: "Update documentation", priority: "low", status: "pending", category: "Development" },
+      { name: "Fix login bug", priority: "high", status: "completed", category: "Development" },
+      { name: "Schedule dentist", priority: "medium", status: "pending", category: "Personal" },
+      { name: "Prepare presentation", priority: "high", status: "in_progress", category: "Work" },
+      { name: "Research competitors", priority: "medium", status: "pending", category: "Research" },
+      { name: "Gym workout", priority: "low", status: "completed", category: "Health" },
+      { name: "Code review PR #234", priority: "medium", status: "completed", category: "Development" },
+      { name: "Plan team event", priority: "low", status: "pending", category: "Work" },
+    ];
+
+    for (const item of sampleItems) {
+      await supabase.from("items").insert({ ...item, user_id: user.id });
+    }
+
+    // Sample automations
+    const sampleAutomations = [
+      { name: "Daily Task Reminder", trigger_type: "schedule", action_type: "generate_suggestion", is_active: true },
+      { name: "High Priority Alert", trigger_type: "item_created", action_type: "webhook", is_active: true },
+      { name: "Completion Tracker", trigger_type: "item_completed", action_type: "generate_report", is_active: false },
+    ];
+
+    for (const auto of sampleAutomations) {
+      await supabase.from("automations").insert({ ...auto, user_id: user.id });
+    }
+
+    fetchStats();
+    setGenerating(false);
+  }
 
   const cards = [
     { title: "Total Items", value: stats.items, icon: ListTodo, color: "text-blue-500", href: "/tracker" },
@@ -55,9 +107,15 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's your overview.</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back! Here's your overview.</p>
+        </div>
+        <Button variant="outline" onClick={fetchStats} className="gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -100,6 +158,10 @@ export default function DashboardPage() {
               Create Automation
             </Button>
           </Link>
+          <Button variant="outline" className="gap-2" onClick={generateSampleData} disabled={generating}>
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+            {generating ? "Generating..." : "Add Sample Data"}
+          </Button>
         </div>
       </div>
 
@@ -109,14 +171,18 @@ export default function DashboardPage() {
           <LayoutDashboard className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-semibold mb-2">Get Started</h3>
           <p className="text-muted-foreground mb-4">
-            Add your first item to start tracking and get AI suggestions.
+            Add your first item or generate sample data to explore all features.
           </p>
-          <Link href="/tracker">
-            <Button>Add Your First Item</Button>
-          </Link>
+          <div className="flex gap-3 justify-center">
+            <Link href="/tracker">
+              <Button>Add Your First Item</Button>
+            </Link>
+            <Button variant="outline" onClick={generateSampleData} disabled={generating}>
+              Generate Sample Data
+            </Button>
+          </div>
         </div>
       )}
     </div>
   );
 }
-
