@@ -49,6 +49,7 @@ import { HelpPanel } from "@/components/ux/HelpPanel";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Prime", href: "/prime", icon: Brain },
   { name: "Nexus", href: "/nexus", icon: Zap },
   { name: "Tracker", href: "/tracker", icon: ListTodo },
   { name: "Suggestions", href: "/suggestions", icon: Sparkles },
