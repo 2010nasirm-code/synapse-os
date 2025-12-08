@@ -25,6 +25,7 @@ import {
   LogOut,
   Moon,
   Sun,
+  Shield,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -40,6 +41,7 @@ const navigation = [
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Knowledge", href: "/knowledge", icon: Network },
   { name: "Agents", href: "/agents", icon: Bot },
+  { name: "Admin", href: "/admin", icon: Shield },
 ];
 
 const secondaryNav = [

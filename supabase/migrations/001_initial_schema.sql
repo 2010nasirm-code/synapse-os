@@ -6,12 +6,13 @@
 -- ============================================
 
 -- User profiles (extends auth.users)
+-- Roles: user, moderator, admin, owner
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email TEXT,
   full_name TEXT,
   avatar_url TEXT,
-  role TEXT DEFAULT 'user',
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'moderator', 'admin', 'owner')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
