@@ -1,0 +1,356 @@
+/* ============================================================================
+   NEXUS PRIME - CORE STYLES
+   Adaptive, responsive, and evolution-ready styling
+   ============================================================================ */
+
+/* CSS Variables for Prime */
+:root {
+  /* Flow State Variables */
+  --prime-animation-speed: 1;
+  --prime-feedback-intensity: 0.7;
+  --prime-transition-duration: 200ms;
+  
+  /* Temporal Variables */
+  --temporal-warmth: 50%;
+  --temporal-animation: 1;
+  
+  /* Emotion Response Variables */
+  --emotion-animation-speed: 1;
+  --emotion-feedback: 0.6;
+  
+  /* Layout Variables */
+  --layout-columns: 3;
+  --layout-gap: 20px;
+  --layout-padding: 24px;
+  --sidebar-width: 280px;
+  --header-height: 64px;
+  
+  /* Morphing Variables */
+  --morph-duration: 200ms;
+  --morph-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode adjustments */
+.dark {
+  --temporal-warmth: 30%;
+}
+
+/* ============================================================================
+   Flow State Classes
+   ============================================================================ */
+
+.prime-flow-idle {
+  --prime-animation-speed: 1.2;
+  --prime-feedback-intensity: 0.5;
+}
+
+.prime-flow-exploring {
+  --prime-animation-speed: 1;
+  --prime-feedback-intensity: 0.7;
+}
+
+.prime-flow-focused {
+  --prime-animation-speed: 0.8;
+  --prime-feedback-intensity: 0.3;
+}
+
+.prime-flow-productive {
+  --prime-animation-speed: 0.9;
+  --prime-feedback-intensity: 0.6;
+}
+
+.prime-flow-rushed {
+  --prime-animation-speed: 0.5;
+  --prime-feedback-intensity: 0.2;
+}
+
+/* ============================================================================
+   Layout Density Classes
+   ============================================================================ */
+
+[data-layout-density="compact"] {
+  --layout-gap: 12px;
+  --layout-padding: 16px;
+}
+
+[data-layout-density="normal"] {
+  --layout-gap: 20px;
+  --layout-padding: 24px;
+}
+
+[data-layout-density="comfortable"] {
+  --layout-gap: 24px;
+  --layout-padding: 32px;
+}
+
+/* ============================================================================
+   Temporal Mode Classes
+   ============================================================================ */
+
+[data-temporal-mode="morning"] {
+  /* Warm, simplified UI */
+  --temporal-warmth: 70%;
+}
+
+[data-temporal-mode="afternoon"] {
+  /* Neutral, full features */
+  --temporal-warmth: 50%;
+}
+
+[data-temporal-mode="evening"] {
+  /* Warmer, relaxed */
+  --temporal-warmth: 30%;
+}
+
+[data-temporal-mode="night"] {
+  /* Very warm, minimal */
+  --temporal-warmth: 20%;
+}
+
+/* ============================================================================
+   Emotion Response Classes
+   ============================================================================ */
+
+[data-emotion-theme="calm"] {
+  --prime-animation-speed: 0.5;
+  transition-duration: calc(var(--morph-duration) * 2);
+}
+
+[data-emotion-theme="energize"] {
+  --prime-animation-speed: 1.2;
+}
+
+[data-emotion-theme="soften"] {
+  filter: brightness(0.95);
+}
+
+/* ============================================================================
+   Morphing Effects
+   ============================================================================ */
+
+.prime-morphable {
+  transition: transform var(--morph-duration) var(--morph-easing),
+              opacity var(--morph-duration) var(--morph-easing),
+              filter var(--morph-duration) var(--morph-easing);
+}
+
+.prime-highlight {
+  animation: prime-highlight-pulse 200ms ease-out;
+}
+
+@keyframes prime-highlight-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0);
+  }
+}
+
+.prime-focus {
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.4);
+}
+
+/* ============================================================================
+   Auto-Hide Elements
+   ============================================================================ */
+
+[data-auto-hide="true"] .prime-auto-hideable {
+  opacity: 0.3;
+  transition: opacity 200ms ease;
+}
+
+[data-auto-hide="true"] .prime-auto-hideable:hover,
+[data-auto-hide="true"] .prime-auto-hideable:focus-within {
+  opacity: 1;
+}
+
+/* ============================================================================
+   Card Size Variants
+   ============================================================================ */
+
+[data-card-size="small"] .prime-card {
+  padding: 12px;
+}
+
+[data-card-size="medium"] .prime-card {
+  padding: 16px;
+}
+
+[data-card-size="large"] .prime-card {
+  padding: 24px;
+}
+
+/* ============================================================================
+   UI Complexity
+   ============================================================================ */
+
+[data-ui-complexity="simple"] .prime-advanced-feature {
+  display: none;
+}
+
+[data-ui-complexity="advanced"] .prime-beginner-hint {
+  display: none;
+}
+
+/* ============================================================================
+   Responsive Grid
+   ============================================================================ */
+
+.prime-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--layout-columns), 1fr);
+  gap: var(--layout-gap);
+  padding: var(--layout-padding);
+}
+
+@media (max-width: 640px) {
+  .prime-grid {
+    grid-template-columns: 1fr;
+    --layout-gap: 12px;
+    --layout-padding: 16px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .prime-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================================
+   Animation Utilities
+   ============================================================================ */
+
+.prime-animate-in {
+  animation: prime-fade-in calc(200ms * var(--prime-animation-speed)) ease-out;
+}
+
+@keyframes prime-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.prime-animate-scale-in {
+  animation: prime-scale-in calc(200ms * var(--prime-animation-speed)) ease-out;
+}
+
+@keyframes prime-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================================================
+   Status Indicators
+   ============================================================================ */
+
+.prime-status-healthy {
+  --status-color: #22c55e;
+}
+
+.prime-status-warning {
+  --status-color: #f59e0b;
+}
+
+.prime-status-error {
+  --status-color: #ef4444;
+}
+
+.prime-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-color);
+}
+
+.prime-status-indicator.pulse {
+  animation: prime-status-pulse 2s ease-in-out infinite;
+}
+
+@keyframes prime-status-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* ============================================================================
+   Scrollbar Styling
+   ============================================================================ */
+
+.prime-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.prime-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prime-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 3px;
+}
+
+.prime-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
+
+/* ============================================================================
+   Glass Morphism
+   ============================================================================ */
+
+.prime-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .prime-glass {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================================
+   Transitions
+   ============================================================================ */
+
+.prime-transition-all {
+  transition: all calc(var(--prime-transition-duration) * var(--prime-animation-speed)) var(--morph-easing);
+}
+
+.prime-transition-transform {
+  transition: transform calc(var(--prime-transition-duration) * var(--prime-animation-speed)) var(--morph-easing);
+}
+
+.prime-transition-opacity {
+  transition: opacity calc(var(--prime-transition-duration) * var(--prime-animation-speed)) var(--morph-easing);
+}
+
+.prime-transition-colors {
+  transition: color calc(var(--prime-transition-duration) * var(--prime-animation-speed)) var(--morph-easing),
+              background-color calc(var(--prime-transition-duration) * var(--prime-animation-speed)) var(--morph-easing),
+              border-color calc(var(--prime-transition-duration) * var(--prime-animation-speed)) var(--morph-easing);
+}
