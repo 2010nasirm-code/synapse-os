@@ -1,0 +1,107 @@
+{
+  "$schema": "./config.schema.json",
+  "name": "Nexus OS Core",
+  "version": "1.0.0",
+  "environment": "development",
+  
+  "agents": {
+    "enabled": [
+      "reasoning",
+      "memory",
+      "planning",
+      "analytics",
+      "insight",
+      "automation",
+      "search",
+      "summarization",
+      "creativity",
+      "scheduling",
+      "notification",
+      "resource",
+      "vector",
+      "backup",
+      "moderation"
+    ],
+    "defaultTimeout": 30000,
+    "maxConcurrent": 5,
+    "retryAttempts": 3
+  },
+  
+  "skills": {
+    "enabled": [
+      "reasoning",
+      "summarization",
+      "translation",
+      "codeAnalysis",
+      "dataVisualizer",
+      "taskPlanner",
+      "writingAssistant"
+    ]
+  },
+  
+  "memory": {
+    "enabled": true,
+    "maxItemsPerUser": 10000,
+    "defaultRetentionDays": 30,
+    "decayRate": 0.01,
+    "minRelevanceScore": 0.3
+  },
+  
+  "cache": {
+    "query": {
+      "enabled": true,
+      "maxSize": 500,
+      "ttlMs": 60000
+    },
+    "embedding": {
+      "enabled": true,
+      "maxSize": 1000,
+      "ttlMs": 3600000
+    },
+    "global": {
+      "enabled": true,
+      "maxSize": 1000,
+      "ttlMs": 300000
+    }
+  },
+  
+  "rateLimits": {
+    "queriesPerMinute": 60,
+    "tokensPerDay": 100000,
+    "memoryItemsPerUser": 10000,
+    "automationsPerUser": 50
+  },
+  
+  "features": {
+    "multiAgentProcessing": true,
+    "memorySystem": true,
+    "automationEngine": true,
+    "vectorSearch": true,
+    "eventTracking": true,
+    "debugLogging": true,
+    "experimentalStreaming": false,
+    "experimentalPlugins": false
+  },
+  
+  "logging": {
+    "level": "info",
+    "maxLogs": 1000,
+    "categories": ["kernel", "router", "agents", "memory", "api", "events"]
+  },
+  
+  "ui": {
+    "commandBar": {
+      "shortcut": "Ctrl+K",
+      "maxHistory": 50,
+      "quickActions": [
+        "Summarize my tasks",
+        "What should I focus on?",
+        "Generate insights",
+        "Create a plan"
+      ]
+    },
+    "theme": "system",
+    "animations": true
+  }
+}
+

@@ -26,6 +26,7 @@ import {
   Moon,
   Sun,
   Shield,
+  Zap,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -35,6 +36,7 @@ import { useInteractionTracker } from "@/hooks/use-interaction-tracker";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Nexus", href: "/nexus", icon: Zap },
   { name: "Tracker", href: "/tracker", icon: ListTodo },
   { name: "Suggestions", href: "/suggestions", icon: Sparkles },
   { name: "Automations", href: "/automations", icon: Workflow },

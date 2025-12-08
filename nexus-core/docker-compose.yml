@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # Main Nexus Application
+  nexus:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - NEXUS_MEMORY_ENABLED=true
+      - NEXUS_AUTOMATIONS_ENABLED=true
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    networks:
+      - nexus-network
+
+  # PostgreSQL Database (local development)
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=nexus
+      - POSTGRES_PASSWORD=nexus_password
+      - POSTGRES_DB=nexus_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - nexus-network
+
+  # Redis for caching and queues
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - nexus-network
+
+  # pgvector for vector storage (alternative to external vector DB)
+  pgvector:
+    image: ankane/pgvector:latest
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=nexus_vector
+      - POSTGRES_PASSWORD=nexus_vector_password
+      - POSTGRES_DB=nexus_vectors
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - nexus-network
+
+  # Optional: Milvus for high-performance vector search
+  # milvus:
+  #   image: milvusdb/milvus:latest
+  #   ports:
+  #     - "19530:19530"
+  #   volumes:
+  #     - milvus_data:/var/lib/milvus
+  #   networks:
+  #     - nexus-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgvector_data:
+  # milvus_data:
+
+networks:
+  nexus-network:
+    driver: bridge
+
