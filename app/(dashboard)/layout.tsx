@@ -27,12 +27,22 @@ import {
   Sun,
   Shield,
   Zap,
+  Palette,
+  Activity,
+  Command,
+  MessageSquare,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/debug/logger";
 import { useInteractionTracker } from "@/hooks/use-interaction-tracker";
+import { CommandPalette } from "@/components/command-palette/command-palette";
+import { useCommandPalette } from "@/hooks/use-command-palette";
+import { AIPanel } from "@/components/ai-assistant/ai-panel";
+import { ThemePanel } from "@/components/theme-panel/theme-panel";
+import { DiagnosticsPanel } from "@/components/diagnostics/diagnostics-panel";
+import { useNexus } from "@/hooks/use-nexus-features";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -65,10 +75,31 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false);
   const supabase = getSupabaseClient();
   const { track } = useInteractionTracker("dashboard-layout");
+  
+  // New feature panels
+  const commandPalette = useCommandPalette();
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
+  const [isThemePanelOpen, setIsThemePanelOpen] = useState(false);
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
+  
+  // Nexus features
+  const { systemHealth, adaptiveComplexity } = useNexus();
 
   useEffect(() => {
     setMounted(true);
     logger.info("ui", "Dashboard layout mounted");
+    
+    // Listen for custom events
+    const handleThemePanel = () => setIsThemePanelOpen(true);
+    const handleAIPanel = () => setIsAIPanelOpen(true);
+    
+    window.addEventListener('nexus:open-theme-panel', handleThemePanel);
+    window.addEventListener('nexus:open-ai-panel', handleAIPanel);
+    
+    return () => {
+      window.removeEventListener('nexus:open-theme-panel', handleThemePanel);
+      window.removeEventListener('nexus:open-ai-panel', handleAIPanel);
+    };
   }, []);
 
   const handleSignOut = async () => {
@@ -86,6 +117,20 @@ export default function DashboardLayout({
 
   const NavLink = ({ item, onClick }: { item: typeof navigation[0]; onClick?: () => void }) => {
     const isActive = pathname === item.href;
+    const isAvailable = adaptiveComplexity.isFeatureAvailable(item.name.toLowerCase().replace(' ', '-'));
+    
+    if (!isAvailable) {
+      return (
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground/40 cursor-not-allowed">
+          <item.icon className="h-5 w-5" />
+          <span className={cn("transition-opacity duration-200", !isSidebarOpen && "lg:opacity-0 lg:w-0")}>
+            {item.name}
+          </span>
+          <span className="ml-auto text-xs">🔒</span>
+        </div>
+      );
+    }
+    
     return (
       <Link href={item.href} onClick={onClick}>
         <motion.div
@@ -119,6 +164,18 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen flex bg-background">
+      {/* Command Palette */}
+      <CommandPalette isOpen={commandPalette.isOpen} onClose={commandPalette.close} />
+      
+      {/* AI Panel */}
+      <AIPanel isOpen={isAIPanelOpen} onClose={() => setIsAIPanelOpen(false)} />
+      
+      {/* Theme Panel */}
+      <ThemePanel isOpen={isThemePanelOpen} onClose={() => setIsThemePanelOpen(false)} />
+      
+      {/* Diagnostics Panel */}
+      <DiagnosticsPanel isOpen={isDiagnosticsOpen} onClose={() => setIsDiagnosticsOpen(false)} />
+
       {/* Desktop Sidebar */}
       <motion.aside
         initial={false}
@@ -149,6 +206,39 @@ export default function DashboardLayout({
             {isSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
+        
+        {/* Quick Actions */}
+        <div className={cn(
+          "p-2 border-b border-border/50 flex gap-1",
+          !isSidebarOpen && "flex-col items-center"
+        )}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={commandPalette.open}
+            className={cn("gap-2", !isSidebarOpen && "w-10 h-10 p-0")}
+          >
+            <Command className="h-4 w-4" />
+            {isSidebarOpen && <span className="text-xs">Ctrl+K</span>}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsAIPanelOpen(true)}
+            className={cn("gap-2", !isSidebarOpen && "w-10 h-10 p-0")}
+          >
+            <MessageSquare className="h-4 w-4" />
+            {isSidebarOpen && <span className="text-xs">AI</span>}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsThemePanelOpen(true)}
+            className={cn("gap-2", !isSidebarOpen && "w-10 h-10 p-0")}
+          >
+            <Palette className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Main Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto relative">
@@ -162,6 +252,32 @@ export default function DashboardLayout({
           {secondaryNav.map((item) => (
             <NavLink key={item.name} item={item} />
           ))}
+
+          {/* System Health */}
+          <button
+            onClick={() => setIsDiagnosticsOpen(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all duration-200"
+          >
+            <Activity className={cn(
+              "h-5 w-5",
+              systemHealth.health?.status === 'healthy' && "text-green-500",
+              systemHealth.health?.status === 'degraded' && "text-yellow-500",
+              systemHealth.health?.status === 'critical' && "text-red-500"
+            )} />
+            <span className={cn("transition-opacity duration-200", !isSidebarOpen && "opacity-0 w-0")}>
+              System Health
+            </span>
+            {isSidebarOpen && systemHealth.health && (
+              <span className={cn(
+                "ml-auto text-xs px-1.5 py-0.5 rounded",
+                systemHealth.health.status === 'healthy' && "bg-green-500/10 text-green-500",
+                systemHealth.health.status === 'degraded' && "bg-yellow-500/10 text-yellow-500",
+                systemHealth.health.status === 'critical' && "bg-red-500/10 text-red-500"
+              )}>
+                {systemHealth.health.score}%
+              </span>
+            )}
+          </button>
 
           {/* Theme Toggle */}
           <button
@@ -186,13 +302,33 @@ export default function DashboardLayout({
           </button>
         </div>
 
-        {/* Beta Badge */}
+        {/* User Level Badge */}
         <div className={cn(
           "p-4 border-t border-border/50",
           !isSidebarOpen && "flex justify-center"
         )}>
-          <div className="px-3 py-1.5 rounded-full bg-orange-500/10 text-orange-500 text-xs font-medium text-center">
-            {isSidebarOpen ? "🧪 Beta Testing Mode" : "🧪"}
+          <div className={cn(
+            "px-3 py-1.5 rounded-full text-xs font-medium text-center",
+            adaptiveComplexity.profile?.level === 'beginner' && "bg-blue-500/10 text-blue-500",
+            adaptiveComplexity.profile?.level === 'intermediate' && "bg-green-500/10 text-green-500",
+            adaptiveComplexity.profile?.level === 'advanced' && "bg-purple-500/10 text-purple-500",
+            adaptiveComplexity.profile?.level === 'expert' && "bg-orange-500/10 text-orange-500"
+          )}>
+            {isSidebarOpen ? (
+              <>
+                {adaptiveComplexity.profile?.level === 'beginner' && '🌱 Beginner'}
+                {adaptiveComplexity.profile?.level === 'intermediate' && '🌿 Intermediate'}
+                {adaptiveComplexity.profile?.level === 'advanced' && '🌳 Advanced'}
+                {adaptiveComplexity.profile?.level === 'expert' && '⚡ Expert'}
+              </>
+            ) : (
+              <>
+                {adaptiveComplexity.profile?.level === 'beginner' && '🌱'}
+                {adaptiveComplexity.profile?.level === 'intermediate' && '🌿'}
+                {adaptiveComplexity.profile?.level === 'advanced' && '🌳'}
+                {adaptiveComplexity.profile?.level === 'expert' && '⚡'}
+              </>
+            )}
           </div>
         </div>
       </motion.aside>
@@ -204,6 +340,12 @@ export default function DashboardLayout({
           <span className="font-bold">Synapse OS</span>
         </Link>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={commandPalette.open}>
+            <Command className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setIsAIPanelOpen(true)}>
+            <MessageSquare className="h-5 w-5" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
@@ -274,4 +416,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-

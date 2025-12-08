@@ -239,3 +239,4 @@ If something doesn't work:
 4. Check Supabase dashboard for any errors
 5. Try `npm run build` to see if there are build errors
 
+

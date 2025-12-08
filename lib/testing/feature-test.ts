@@ -355,3 +355,4 @@ export function formatTestResults(suite: TestSuite): string {
   return output;
 }
 
+

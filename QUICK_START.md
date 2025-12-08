@@ -173,3 +173,4 @@ Everything is already in the code:
 
 **No extra downloads needed!** Just configure Supabase and you're ready! 🎉
 
+

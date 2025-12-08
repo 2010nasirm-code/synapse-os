@@ -18,3 +18,4 @@ export function getSupabaseClient() {
 // Alias for compatibility
 export const createClient = getSupabaseClient;
 
+

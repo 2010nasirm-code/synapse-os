@@ -60,3 +60,4 @@ function summarize(text: string, length: string, format: string): any {
 
 export default summarizationSkill;
 
+

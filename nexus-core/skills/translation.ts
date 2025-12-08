@@ -50,3 +50,4 @@ function detectLanguage(text: string): string {
 
 export default translationSkill;
 
+

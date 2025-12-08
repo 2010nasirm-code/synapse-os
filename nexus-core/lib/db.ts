@@ -95,3 +95,4 @@ export const NexusTables = {
   QUERIES: "nexus_queries",
 } as const;
 
+

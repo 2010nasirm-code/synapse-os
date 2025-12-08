@@ -160,3 +160,4 @@ function generateIdeas(topic: string): { answer: string; ideas: string[] } {
 
 export default creativityAgent;
 
+
